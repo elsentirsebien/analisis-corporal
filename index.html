@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de Composición Corporal y Macronutrientes</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configuración de Tailwind para usar la fuente Inter y colores -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#10B981', // Verde esmeralda para destacar
+                        secondary: '#FBBF24', // Amarillo para contraste
+                        background: '#F9FAFB', // Fondo claro
+                        card: '#FFFFFF',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Carga de Chart.js para los gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        /* Estilos personalizados para mejorar la apariencia */
+        .input-style {
+            @apply w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary transition duration-150 ease-in-out shadow-sm;
+        }
+    </style>
+</head>
+<body class="bg-background font-sans min-h-screen p-4 sm:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold text-gray-800 mb-2">Informe de Composición Corporal</h1>
+            <p class="text-lg text-gray-500">Genera tu análisis metabólico y recomendaciones nutricionales diarias.</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Columna de Entrada de Datos -->
+            <section id="input-section" class="lg:col-span-1 bg-card p-6 rounded-2xl shadow-xl h-fit">
+                <h2 class="text-2xl font-bold text-gray-700 mb-6 border-b pb-2">Datos Personales y Métricos</h2>
+                <form id="metrics-form" class="space-y-4">
+                    
+                    <!-- Nombre -->
+                    <div>
+                        <label for="name" class="block text-sm font-medium text-gray-700">Nombre</label>
+                        <input type="text" id="name" value="VERÓNICA" class="input-style" required>
+                    </div>
+
+                    <!-- Edad (años) -->
+                    <div>
+                        <label for="age" class="block text-sm font-medium text-gray-700">Edad (años)</label>
+                        <input type="number" id="age" value="47" min="1" class="input-style" required>
+                    </div>
+
+                    <!-- Género -->
+                    <div>
+                        <label for="gender" class="block text-sm font-medium text-gray-700">Género</label>
+                        <select id="gender" class="input-style" required>
+                            <option value="1">Mujer</option>
+                            <option value="2">Hombre</option>
+                        </select>
+                    </div>
+
+                    <!-- Estatura (cm) -->
+                    <div>
+                        <label for="height" class="block text-sm font-medium text-gray-700">Estatura (cm)</label>
+                        <input type="number" id="height" value="155" min="50" step="1" class="input-style" required>
+                    </div>
+
+                    <!-- Peso (kg) -->
+                    <div>
+                        <label for="weight" class="block text-sm font-medium text-gray-700">Peso (kg)</label>
+                        <input type="number" id="weight" value="73.0" min="20" step="0.1" class="input-style" required>
+                    </div>
+
+                    <!-- Circunferencias -->
+                    <h3 class="text-lg font-semibold pt-2 text-gray-700">Medidas de Circunferencia (cm)</h3>
+                    <div>
+                        <label for="waist" class="block text-sm font-medium text-gray-700">Cintura</label>
+                        <input type="number" id="waist" value="99.0" min="10" step="0.1" class="input-style" required>
+                    </div>
+                    <div>
+                        <label for="neck" class="block text-sm font-medium text-gray-700">Cuello</label>
+                        <input type="number" id="neck" value="36.0" min="10" step="0.1" class="input-style" required>
+                    </div>
+                    <!-- Cadera (Solo relevante para mujeres) -->
+                    <div id="hip-group">
+                        <label for="hip" class="block text-sm font-medium text-gray-700">Cadera</label>
+                        <input type="number" id="hip" value="112.0" min="10" step="0.1" class="input-style" required>
+                    </div>
+
+                    <!-- Nivel de Actividad -->
+                    <div>
+                        <label for="activity" class="block text-sm font-medium text-gray-700">Nivel de Actividad</label>
+                        <select id="activity" class="input-style" required>
+                            <option value="1">1 - Sedentario</option>
+                            <option value="2">2 - Ligeramente Activo</option>
+                            <option value="3" selected>3 - Moderadamente Activo</option>
+                            <option value="4">4 - Muy Activo</option>
+                            <option value="5">5 - Extremadamente Activo</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Contextura (No se usa directamente en cálculos estándar, pero se mantiene como dato) -->
+                    <div>
+                        <label for="frame" class="block text-sm font-medium text-gray-700">Contextura</label>
+                        <select id="frame" class="input-style" required>
+                            <option value="1">1 - Pequeña</option>
+                            <option value="2" selected>2 - Mediana</option>
+                            <option value="3">3 - Grande</option>
+                        </select>
+                    </div>
+
+
+                    <button type="submit" class="w-full bg-primary text-white p-3 rounded-lg font-semibold hover:bg-green-600 transition duration-200 ease-in-out shadow-md mt-4">
+                        Generar Informe
+                    </button>
+                </form>
+            </section>
+
+            <!-- Columna de Resultados e Informe -->
+            <section class="lg:col-span-2 bg-card p-6 rounded-2xl shadow-xl">
+                <h2 class="text-2xl font-bold text-gray-700 mb-6 border-b pb-2">Resultados y Recomendaciones</h2>
+                <div id="results" class="space-y-6">
+                    <p class="text-gray-500 italic">Ingresa tus datos y presiona "Generar Informe" para ver los resultados aquí.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Declaración de variables globales para el gráfico
+        let macroChart = null;
+
+        // Multiplicadores de actividad física (Activity Multiplier - AM)
+        const ACTIVITY_MULTIPLIERS = {
+            1: 1.2,    // Sedentario
+            2: 1.375,  // Ligeramente Activo
+            3: 1.55,   // Moderadamente Activo
+            4: 1.725,  // Muy Activo
+            5: 1.9     // Extremadamente Activo
+        };
+
+        // Escucha el cambio de género para mostrar/ocultar el campo Cadera
+        document.getElementById('gender').addEventListener('change', function() {
+            const hipGroup = document.getElementById('hip-group');
+            // Género 1 es Mujer, si es 2 (Hombre), se oculta Cadera
+            if (this.value === '2') {
+                hipGroup.classList.add('hidden');
+                document.getElementById('hip').value = 0; // Se setea a 0 para el cálculo
+                document.getElementById('hip').required = false;
+            } else {
+                hipGroup.classList.remove('hidden');
+                document.getElementById('hip').required = true;
+                // Valor por defecto para mujer si se vuelve a cambiar (de la imagen original)
+                document.getElementById('hip').value = 112.0; 
+            }
+        });
+
+        // Evento principal para calcular y generar el informe
+        document.getElementById('metrics-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 1. Obtención de Datos
+            const name = document.getElementById('name').value;
+            const gender = parseInt(document.getElementById('gender').value); // 1: Mujer, 2: Hombre
+            const age = parseFloat(document.getElementById('age').value);
+            const height = parseFloat(document.getElementById('height').value); // cm
+            const weight = parseFloat(document.getElementById('weight').value); // kg
+            const waist = parseFloat(document.getElementById('waist').value); // cm
+            const neck = parseFloat(document.getElementById('neck').value); // cm
+            const hip = parseFloat(document.getElementById('hip').value) || 0; // cm (solo mujer)
+            const activity = parseInt(document.getElementById('activity').value);
+            
+            // 2. Ejecución de Cálculos
+            
+            const bmi = calculateBMI(weight, height);
+            const bmr = calculateBMR(gender, weight, height, age);
+            const tdee = calculateTDEE(bmr, activity);
+            const bodyFat = calculateBodyFat(gender, height, waist, neck, hip);
+            
+            // 3. Macronutrientes (Distribución de ejemplo para recomposición/mantenimiento)
+            const macroSplit = {
+                proteinPct: 0.35, // 35%
+                carbPct: 0.45,    // 45%
+                fatPct: 0.20      // 20%
+            };
+
+            const macros = calculateMacros(tdee, macroSplit);
+
+            // 4. Renderizar Resultados
+            renderResults(name, bmi, bmr, tdee, bodyFat, macros);
+        });
+
+        // FUNCIONES DE CÁLCULO
+        
+        /**
+         * Calcula el Índice de Masa Corporal (IMC).
+         * @param {number} weight - Peso en kg.
+         * @param {number} height - Estatura en cm.
+         * @returns {number} IMC.
+         */
+        function calculateBMI(weight, height) {
+            const heightMeters = height / 100;
+            return weight / (heightMeters * heightMeters);
+        }
+
+        /**
+         * Calcula la Tasa Metabólica Basal (TMB) usando Mifflin-St Jeor.
+         * @param {number} gender - 1=Mujer, 2=Hombre.
+         * @param {number} weight - Peso en kg.
+         * @param {number} height - Estatura en cm.
+         * @param {number} age - Edad en años.
+         * @returns {number} TMB en kcal/día.
+         */
+        function calculateBMR(gender, weight, height, age) {
+            // Hombres: (10 * peso) + (6.25 * altura) - (5 * edad) + 5
+            // Mujeres: (10 * peso) + (6.25 * altura) - (5 * edad) - 161
+            const base = (10 * weight) + (6.25 * height) - (5 * age);
+            return gender === 2 ? base + 5 : base - 161;
+        }
+
+        /**
+         * Calcula el Gasto Energético Diario Total (TDEE).
+         * @param {number} bmr - TMB en kcal/día.
+         * @param {number} activityLevel - Nivel de actividad (1-5).
+         * @returns {number} TDEE en kcal/día.
+         */
+        function calculateTDEE(bmr, activityLevel) {
+            const multiplier = ACTIVITY_MULTIPLIERS[activityLevel] || ACTIVITY_MULTIPLIERS[1];
+            return bmr * multiplier;
+        }
+
+        /**
+         * Clasifica el IMC.
+         * @param {number} bmi - IMC calculado.
+         * @returns {string} Clasificación.
+         */
+        function getBMIStatus(bmi) {
+            if (bmi < 18.5) return 'Bajo Peso';
+            if (bmi >= 18.5 && bmi < 24.9) return 'Peso Normal';
+            if (bmi >= 25 && bmi < 29.9) return 'Sobrepeso';
+            if (bmi >= 30 && bmi < 34.9) return 'Obesidad Clase I';
+            if (bmi >= 35 && bmi < 39.9) return 'Obesidad Clase II';
+            return 'Obesidad Clase III';
+        }
+        
+        /**
+         * Calcula el Porcentaje de Grasa Corporal (US Navy Method).
+         * Utiliza el logaritmo base 10 (Math.log10).
+         * @param {number} gender - 1=Mujer, 2=Hombre.
+         * @param {number} height - Estatura en cm.
+         * @param {number} waist - Cintura en cm.
+         * @param {number} neck - Cuello en cm.
+         * @param {number} hip - Cadera en cm (solo mujer).
+         * @returns {number} Porcentaje de Grasa Corporal (0-100).
+         */
+        function calculateBodyFat(gender, height, waist, neck, hip) {
+            let bfPct;
+            
+            // Función para log10 (Math.log(x) / Math.log(10))
+            const log10 = (x) => Math.log(x) / Math.log(10);
+            
+            if (gender === 1) { // Mujer
+                // US Navy Formula: %BF = 163.205*log10(W+H-N) - 97.684*log10(H) - 104.912
+                bfPct = 163.205 * log10(waist + hip - neck) - 97.684 * log10(height) - 104.912;
+            } else { // Hombre
+                // US Navy Formula: %BF = 86.010*log10(W-N) - 70.041*log10(H) + 36.76
+                bfPct = 86.010 * log10(waist - neck) - 70.041 * log10(height) + 36.76;
+            }
+
+            // Asegurar que el resultado esté en un rango razonable
+            return Math.max(0, Math.min(100, bfPct));
+        }
+
+        /**
+         * Clasifica el Porcentaje de Grasa Corporal.
+         * @param {number} gender - 1=Mujer, 2=Hombre.
+         * @param {number} bfPct - Porcentaje de grasa.
+         * @returns {string} Clasificación.
+         */
+        function getBodyFatStatus(gender, bfPct) {
+            // Rangos basados en ACE (American Council on Exercise)
+            if (gender === 1) { // Mujer
+                if (bfPct < 14) return 'Esencial';
+                if (bfPct < 21) return 'Atleta';
+                if (bfPct < 25) return 'Fitness';
+                if (bfPct < 32) return 'Aceptable';
+                return 'Obesidad';
+            } else { // Hombre
+                if (bfPct < 6) return 'Esencial';
+                if (bfPct < 14) return 'Atleta';
+                if (bfPct < 18) return 'Fitness';
+                if (bfPct < 25) return 'Aceptable';
+                return 'Obesidad';
+            }
+        }
+
+        /**
+         * Calcula los gramos de macronutrientes.
+         * @param {number} tdee - TDEE en kcal/día.
+         * @param {object} split - Distribución en porcentajes (proteinPct, carbPct, fatPct).
+         * @returns {object} Macronutrientes en kcal y gramos.
+         */
+        function calculateMacros(tdee, split) {
+            // Conversión: 1g Proteína/Carbohidrato = 4 kcal, 1g Grasa = 9 kcal
+            
+            const proteinKcal = tdee * split.proteinPct;
+            const carbKcal = tdee * split.carbPct;
+            const fatKcal = tdee * split.fatPct;
+            
+            return {
+                protein: {
+                    kcal: proteinKcal,
+                    grams: proteinKcal / 4
+                },
+                carbs: {
+                    kcal: carbKcal,
+                    grams: carbKcal / 4
+                },
+                fat: {
+                    kcal: fatKcal,
+                    grams: fatKcal / 9
+                },
+                totalKcal: tdee
+            };
+        }
+
+        // FUNCIONES DE RENDERIZADO
+        
+        /**
+         * Genera el HTML de la tarjeta de resultados.
+         * @param {string} title - Título de la tarjeta.
+         * @param {string} value - Valor principal.
+         * @param {string} unit - Unidad del valor.
+         * @param {string} interpretation - Interpretación o estado.
+         * @param {string} colorClass - Clase de color de Tailwind.
+         * @returns {string} HTML de la tarjeta.
+         */
+        function createResultCard(title, value, unit, interpretation, colorClass) {
+            return `
+                <div class="bg-gray-50 p-4 rounded-xl shadow-inner border-l-4 ${colorClass} transition duration-300 hover:shadow-lg">
+                    <p class="text-sm font-semibold text-gray-500">${title}</p>
+                    <div class="flex items-end justify-between mt-1">
+                        <span class="text-3xl font-extrabold text-gray-800">${value}</span>
+                        <span class="text-lg font-medium text-gray-400">${unit}</span>
+                    </div>
+                    <p class="text-sm mt-1 font-bold text-gray-600">${interpretation}</p>
+                </div>
+            `;
+        }
+
+        /**
+         * Renderiza todos los resultados en el DOM.
+         */
+        function renderResults(name, bmi, bmr, tdee, bodyFat, macros) {
+            const resultsDiv = document.getElementById('results');
+            const bmiStatus = getBMIStatus(bmi);
+            const bfStatus = getBodyFatStatus(gender, bodyFat);
+            
+            // Determinar color de estado (simple)
+            const bmiColor = (bmi >= 18.5 && bmi <= 24.9) ? 'border-primary' : 'border-secondary';
+            const bfColor = (bfStatus === 'Fitness' || bfStatus === 'Aceptable') ? 'border-primary' : 'border-red-500';
+
+            // HTML de las tarjetas de resultados clave
+            const resultsHTML = `
+                <h3 class="text-2xl font-bold text-gray-700 mt-4">${name} - Resumen Corporal</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    ${createResultCard('IMC (Índice de Masa Corporal)', bmi.toFixed(1), 'kg/m²', bmiStatus, bmiColor)}
+                    ${createResultCard('Grasa Corporal Estimada', bodyFat.toFixed(1), '%', bfStatus, bfColor)}
+                    ${createResultCard('TMB (Tasa Metabólica Basal)', Math.round(bmr), 'kcal/día', 'Energía en reposo', 'border-blue-500')}
+                    ${createResultCard('TDEE (Gasto Diario Total)', Math.round(tdee), 'kcal/día', 'Mantenimiento de peso', 'border-primary')}
+                </div>
+                
+                <h3 class="text-2xl font-bold text-gray-700 mt-8 mb-4">Recomendación Diaria de Macronutrientes</h3>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Tabla de Macronutrientes -->
+                    <div class="bg-white p-5 rounded-xl shadow-lg border border-gray-200">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nutriente</th>
+                                    <th class="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">% de Kcal</th>
+                                    <th class="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Gramos (g)</th>
+                                    <th class="px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Kcal</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200 text-gray-700">
+                                <tr>
+                                    <td class="px-3 py-3 whitespace-nowrap font-semibold text-primary">Proteínas</td>
+                                    <td class="px-3 py-3 whitespace-nowrap">${(macros.protein.kcal / tdee * 100).toFixed(0)}%</td>
+                                    <td class="px-3 py-3 whitespace-nowrap font-extrabold">${Math.round(macros.protein.grams)} g</td>
+                                    <td class="px-3 py-3 whitespace-nowrap">${Math.round(macros.protein.kcal)} kcal</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-3 py-3 whitespace-nowrap font-semibold text-blue-500">Carbohidratos</td>
+                                    <td class="px-3 py-3 whitespace-nowrap">${(macros.carbs.kcal / tdee * 100).toFixed(0)}%</td>
+                                    <td class="px-3 py-3 whitespace-nowrap font-extrabold">${Math.round(macros.carbs.grams)} g</td>
+                                    <td class="px-3 py-3 whitespace-nowrap">${Math.round(macros.carbs.kcal)} kcal</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-3 py-3 whitespace-nowrap font-semibold text-secondary">Grasas</td>
+                                    <td class="px-3 py-3 whitespace-nowrap">${(macros.fat.kcal / tdee * 100).toFixed(0)}%</td>
+                                    <td class="px-3 py-3 whitespace-nowrap font-extrabold">${Math.round(macros.fat.grams)} g</td>
+                                    <td class="px-3 py-3 whitespace-nowrap">${Math.round(macros.fat.kcal)} kcal</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p class="text-sm text-gray-500 mt-4 italic">Total Diario: ${Math.round(tdee)} kcal (Recomendación: 35% Prot / 45% Carb / 20% Grasa)</p>
+                    </div>
+
+                    <!-- Gráfico de Distribución -->
+                    <div class="flex flex-col justify-center items-center bg-white p-4 rounded-xl shadow-lg border border-gray-200">
+                        <canvas id="macroChartCanvas" class="w-full h-full max-h-80"></canvas>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = resultsHTML;
+
+            // Renderizar el gráfico
+            renderMacroChart(macros);
+        }
+
+        /**
+         * Dibuja o actualiza el gráfico circular de macronutrientes.
+         * @param {object} macros - Datos de macronutrientes.
+         */
+        function renderMacroChart(macros) {
+            const ctx = document.getElementById('macroChartCanvas').getContext('2d');
+            
+            const data = {
+                labels: ['Proteínas', 'Carbohidratos', 'Grasas'],
+                datasets: [{
+                    label: 'Distribución Calórica',
+                    data: [macros.protein.kcal, macros.carbs.kcal, macros.fat.kcal],
+                    backgroundColor: [
+                        '#10B981', // primary - Verde
+                        '#3B82F6', // blue-500 - Azul
+                        '#FBBF24'  // secondary - Amarillo
+                    ],
+                    hoverOffset: 4
+                }]
+            };
+
+            const config = {
+                type: 'doughnut',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    family: 'Inter'
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Distribución de Calorías por Macro',
+                            font: {
+                                size: 16,
+                                family: 'Inter',
+                                weight: 'bold'
+                            },
+                            color: '#4B5563' // gray-600
+                        }
+                    }
+                }
+            };
+            
+            // Destruir el gráfico anterior si existe
+            if (macroChart) {
+                macroChart.destroy();
+            }
+            
+            // Crear el nuevo gráfico
+            macroChart = new Chart(ctx, config);
+        }
+        
+        // Inicializa el estado de la Cadera al cargar la página (para el valor por defecto de Mujer)
+        window.onload = function() {
+            document.getElementById('gender').dispatchEvent(new Event('change'));
+            // También ejecuta el cálculo inicial con los valores preestablecidos
+            document.getElementById('metrics-form').dispatchEvent(new Event('submit'));
+        };
+
+    </script>
+</body>
+</html>
